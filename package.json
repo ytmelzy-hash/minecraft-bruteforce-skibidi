@@ -1,0 +1,16 @@
+{
+  "type": "module",
+  "name": "minecraft-bruteforce",
+  "version": "1.0.0",
+  "description": "Minecraft account bruteforce tool",
+  "main": "bruteforce.js",
+  "scripts": {
+    "start": "node bruteforce.js"
+  },
+  "dependencies": {
+    "mineflayer": "^4.20.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
