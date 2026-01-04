@@ -1,11 +1,39 @@
 import mineflayer from 'mineflayer';
 import fs from 'fs';
 import https from 'https';
+import http from 'http'; // ← DODAJ TO
 
 const server = { host: 'anarchia.gg', port: 25565 };
 const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1457118913962709012/DnLe-AkG_W9GOp7wR2kJoS36JvL3HHDdIBf-ogrZfN3B6yOxi7-IZYFPanx_qFgJVJZP';
 const PROGRESS_FILE = 'progress.json';
 
+// ← DODAJ HTTP SERVER (Fly.io tego wymaga)
+const HTTP_PORT = process.env.PORT || 8080;
+const httpServer = http.createServer((req, res) => {
+    const progress = loadProgress();
+    const accounts = Object.keys(progress).length;
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Minecraft Bot Status</title></head>
+        <body style="font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00;">
+            <h1>🤖 Minecraft Bruteforce Bot</h1>
+            <p>✅ Status: <strong>RUNNING</strong></p>
+            <p>📊 Active accounts: <strong>${accounts}</strong></p>
+            <p>🕐 Uptime: ${process.uptime().toFixed(0)}s</p>
+            <hr>
+            <pre>${JSON.stringify(progress, null, 2)}</pre>
+        </body>
+        </html>
+    `);
+});
+
+httpServer.listen(HTTP_PORT, () => {
+    console.log(`🌐 HTTP server running on port ${HTTP_PORT}`);
+});
+
+// ... reszta twojego kodu (wszystkie funkcje) ...
 // Na początku pliku, po import
 let backupInterval = null;
 
@@ -525,4 +553,5 @@ process.on('unhandledRejection', (reason, promise) => {
 main().catch(err => {
     console.error('❌ Błąd krytyczny:', err.message);
     process.exit(1);
+
 });
