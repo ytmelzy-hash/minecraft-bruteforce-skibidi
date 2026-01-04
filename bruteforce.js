@@ -576,3 +576,4 @@ main().catch(err => {
     console.error('❌ Błąd krytyczny:', err.message);
     process.exit(1);
 });
+
