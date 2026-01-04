@@ -1,0 +1,8 @@
+run = "node bruteforce.js"
+modules = ["nodejs-20"]
+
+[deployment]
+run = ["sh", "-c", "node bruteforce.js"]
+
+[nix]
+channel = "stable-22_11"
