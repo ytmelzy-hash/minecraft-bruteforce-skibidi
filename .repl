@@ -1,0 +1,2 @@
+run = "node bruteforce.js"
+modules = ["nodejs-20"]
